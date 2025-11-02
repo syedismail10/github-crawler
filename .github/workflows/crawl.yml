@@ -56,7 +56,7 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: postgres
           PGDATABASE: github_crawler
-          GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
+          GITHUB_TOKEN: ${{ secrets.secret }}
           # For the demo CI run we collect a smaller sample. To collect 100k set TARGET_COUNT=100000
           TARGET_COUNT: 100000
           WINDOW_DAYS: 30
