@@ -56,4 +56,4 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: github_crawler
         run: |
-          PYTHONPATH=. pytest -q
+          pytest -v
