@@ -26,7 +26,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install system deps and python requirements
         run: |
@@ -56,4 +56,4 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: github_crawler
         run: |
-          pytest -q
+          PYTHONPATH=. pytest -q

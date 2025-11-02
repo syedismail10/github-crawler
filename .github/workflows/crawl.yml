@@ -3,7 +3,7 @@
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * *' # daily at 03:00 UTC (optional)
+    - cron: "0 3 * * *" # daily at 03:00 UTC (optional)
 
 jobs:
   crawl:
@@ -27,7 +27,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install system deps and python requirements
         run: |
@@ -56,7 +56,7 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: postgres
           PGDATABASE: github_crawler
-          # Use the Actions-provided token; do NOT store or require secrets
+          GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
           # For the demo CI run we collect a smaller sample. To collect 100k set TARGET_COUNT=100000
           TARGET_COUNT: 100000
           WINDOW_DAYS: 30
