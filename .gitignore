@@ -1,0 +1,6 @@
+.env
+crawl.log
+.venv
+__pycache__/
+node_modules/
+tests

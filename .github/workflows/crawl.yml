@@ -1,0 +1,76 @@
+﻿name: crawl-stars
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # daily at 03:00 UTC (optional)
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: github_crawler
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install system deps and python requirements
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Wait for Postgres to be available
+        run: |
+          for i in {1..15}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            echo "waiting for postgres... ($i)"; sleep 2
+          done
+
+      - name: Setup Postgres schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d github_crawler -f sql/schema.sql
+
+      - name: Crawl stars
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: github_crawler
+          # Use the Actions-provided token; do NOT store or require secrets
+          # For the demo CI run we collect a smaller sample. To collect 100k set TARGET_COUNT=100000
+          TARGET_COUNT: 100000
+          WINDOW_DAYS: 30
+        run: |
+          python src/crawl_stars.py --target $TARGET_COUNT --window-days $WINDOW_DAYS
+
+      - name: Dump stars to CSV
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d github_crawler -c "\copy (SELECT r.name_with_owner, s.snapshot_date, s.stars, r.url FROM stars_history s JOIN repositories r ON r.repo_node_id = s.repo_node_id ORDER BY s.snapshot_date DESC) TO 'stars_dump.csv' CSV HEADER"
+
+      - name: Upload artifact (CSV)
+        uses: actions/upload-artifact@v4
+        with:
+          name: stars-dump
+          path: stars_dump.csv
